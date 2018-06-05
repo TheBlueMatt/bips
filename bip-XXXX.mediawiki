@@ -37,7 +37,7 @@ a number of drawbacks:
 
 We propose two separate but related protocols - one which carries work
 information (roughly analogous to what Stratum provides today) and one which
-carries pool payout information. This allows us to effectively splits the job
+carries pool payout information. This allows us to effectively split the job
 of a pool in two - allowing end users to do the work of selecting transactions
 (or allowing them to select a separate pool for that job) while the pool is
 left only splitting rewards between their users. The work-carrying protocol is
@@ -695,7 +695,7 @@ TODO: SHARE_REJECTED - either stale or invalid
 : This depends largely on the amount of complexity the mining hardware intends to support. For hardware which supports both, instead of the current configuration where mining firmware is directed to connect to one or more pool(s) to get work and payout information from, miners may now have two sets of host fields, one for work and one for pools. For simpler mining firmware, they may chose to only support work providers, which could be pointed to a proxy which combines work from a work provider and payout information from a pool into one stream of BLOCK_TEMPLATEs. An example of such a proxy server exists at [https://github.com/TheBlueMatt/mining-proxy the author's GitHub], which also supports acting as a stratum server for existing hardware to connect to.
 ; Is it not likely that many miners will simply chose to connect to the same operator for both work and pool payout information?
 : Indeed, this is possible, however reducing the switching cost of miners for the work information is already a significant advantage over today's setup. Additionally, splitting the protocol in two can simplify pool operation greatly - allowing pool operators to simply expose Bitcoin Core as a work server can simplify the work of building a pool server.
-; What about mining devices without reliable time sources? (TODO: THink about this a bit harder)
+; What about mining devices without reliable time sources? (TODO: Think about this a bit harder)
 : Note that while timestamps are used in the protocol, clients can be fully compliant *without* knowing the current time. While servers must provide it, if all downstream clients use timestamp fields simply as an ever-increasing id, they can operate normally (though should generally avoid doing so to avoid it being possible to generate updates which can never be overridden).
 ; Why are some messages signed and others not?
 : In the general sense, MITM cannot be prevented...TODO
