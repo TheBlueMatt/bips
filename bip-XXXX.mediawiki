@@ -24,8 +24,9 @@ interpreted as described in RFC 2119.
 Currently, miners connect to pool servers using the Stratum protocol, which has
 a number of drawbacks:
 * Stratum requires the pool to select the work. This means that, from the Bitcoin network's point of view, the pool acting as the miner instead of the hardware owner/operator, drastically increasing effective miner centralization and crippling the Bitcoin system's ability to achieve some of its key goals.
-* Stratum is currently unauthenticated. This drastically reduces network security against short-term attacks as man-in-the-middle attackers can gain control of large amounts of hashpower until human operators are able to notice and take corrective action.
+* Stratum is currently unauthenticated (stratum is authenticated scheme://user[:password]@hostname:port). This drastically reduces network security against short-term attacks as man-in-the-middle/eavesdrop attackers can gain control of large amounts of hashpower until human operators are able to notice and take corrective action.
 * Stratum has a few protocol quirks which result in it being difficult to implement, plus lack of documentation is often cited as a major blocker.
+* Stratum is TCP session oriented, this leading for losses disconnects, tcp disordering/delays on long distances, this impacting efficiency and leads to jobs/mining efficiecy loose + additional waste of energy.  
 * The simple implementation of Stratum clients results in each miner at large farms being pointed at a common, remote, Stratum server. This leads to potentially thousands or tens of thousands of individual TCP connections to each pool.
 
 Further, pool servers currently use getblocktemplate, as well as a number of
@@ -48,6 +49,8 @@ protocol is intended only for pool<->client communication.
 Additionally, we propose a simple protocol by which multiple clients on the
 same LAN can find peers which are connected to the same pool/work-provider and
 simply multiplex their connection using each other as a proxy.
+
+binary protocol using udp/igmp may also descrease amount of traffic vs json-rpc improving efficiency again.
 
 While it may have been possible to add the required features as extensions in
 Stratum, the architectural changes required to allow clients to build work
@@ -74,13 +77,15 @@ This section is non-normative, but provides some examples of expected deployment
     / (via work protocol)      \ (via pool protocol)
  local bitcoind                 remote pool
 
-In this setup, a Mining Controller (eg a cheap ARM-based server) accepts incoming connections from ASIC miners. These connections can either use stratum (for backward compatibility) or the new work protocol (optionally in headers mode, which greatly simplifies the logic at the ASIC level - allowing the ASIC firmware to skip even implementing merkle-path-hashing/coinbase transaction construction logic). This Mining Controller gets work via the work protocol (never in headers mode) from a local bitcoind (optionally on the same device, for simplicity) and connects to one or more remote pools using the pool protocol. With a BLOCK_TEMPLATE from the bitcoind and a PAYOUT_INFO from the pool server, the Mining Controller can construct unique work which pays out to the pool but contains transactions selected by a local node for distribution to the ASICs. Blocks which meet the pool's SHARE_DIFFICULTY's ''share_target'' are sent (with just the coinbase transaction, merkle path, and block header) to the pool for verification and payout, and blocks which meet the Bitcoin network difficulty are sent to the local bitcoind. The pool can optionally request that full blocks be sent at a secondary difficulty (using a weak-block-based compression scheme) so that the pool receives full-difficulty blocks for relaying as well.
+In this setup, a Mining Controller (eg a cheap ARM-based server/or even arduino/or cpu-less controllers) accepts incoming connections from ASIC miners. These connections can either use stratum (for backward compatibility) or the new work protocol (optionally in headers mode, which greatly simplifies the logic at the ASIC level - allowing the ASIC firmware to skip even implementing merkle-path-hashing/coinbase transaction construction logic). This Mining Controller gets work via the work protocol (never in headers mode) from a local bitcoind (optionally on the same device, for simplicity) and connects to one or more remote pools using the pool protocol. With a BLOCK_TEMPLATE from the bitcoind and a PAYOUT_INFO from the pool server, the Mining Controller can construct unique work which pays out to the pool but contains transactions selected by a local node for distribution to the ASICs. Blocks which meet the pool's SHARE_DIFFICULTY's ''share_target'' are sent (with just the coinbase transaction, merkle path, and block header) to the pool for verification and payout, and blocks which meet the Bitcoin network difficulty are sent to the local bitcoind. The pool can optionally request that full blocks be sent at a secondary difficulty (using a weak-block-based compression scheme) so that the pool receives full-difficulty blocks for relaying as well.
 
 ===Simple but Efficient Pool Architecture===
 
 TODO: Something about how having only one pool server is great cause you can multiplex multiple clients over the pool protocol so you can have a bunch of stratum proxies + bitcoinds globally for effeciency and then only have one (or two, for redundancy/GFW issues) pool server centrally/securely hosted, greatly simplifying management and security of a pool.
 
 ==Specification of Work Protocol==
+(suggestion message_type/message_length/8-64byte control or signature - makes simpler protocol parsing and lower attack vectors
+or even message_length/8-64byte control or signature and then message_type makes parser logics simpler.
 
 # All messages are serialized on the wire with a 1-byte ''message_type'' prefix, the ''message_length'' (as a 3-byte integer, not counting the ''message_type'' and ''message_length'' fields), followed by the message itself. All numbers are encoded as little-endian unless otherwise specified.
 # Nodes MUST NOT send any excess data in a message. Messages which are defined to have a constant-size length MUST be encoded with the exact length specified.
@@ -768,6 +773,8 @@ TODO: Something about how having only one pool server is great cause you can mul
 ==Discussion==
 
 ; Why TCP? Isn't UDP better for low-latency relay?
+; please take a look for UDP+ICE/STUN & IGMP as well.
+
 : Because the time-critical packets are designed to fit into 1 TCP frame, using TCP reduces complexity of reliable transport and NAT traversal significantly while still providing low-latency delivery.
 ; Why add the complexity of the weak blocks relay?
 : Because PPS-based pooling has become a common practice for business reasons, some pools care deeply about being able to optimize the relay of blocks which pay out to them. Thus, to avoid the pools relying heavily on their clients to do their own careful optimization, clients can be made to relay some portion of their blocks efficiently to the pool, further allowing pools to spot-check the validity of the work clients are hashing on. Pools which do not need weak-block-based relay may chose to simply set the ''weak_block_difficulty'' to the current block difficulty and send WEAK_BLOCK_STATE_RESET messages after each WEAK_BLOCK, which implies that it is unlikely the client will ever have a chance to relay a compressed weak block.
