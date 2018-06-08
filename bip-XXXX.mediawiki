@@ -747,7 +747,7 @@ TODO: Something about how having only one pool server is great cause you can mul
 |-
 |message_length||uint32_t||3 bytes||Little-Endian Integer||The remaining length of the message in order {low-order byte, second-to-low-order byte, second-to-high-order byte} with the high-order byte implicitly 0
 |-
-|signature||secp256k1 compact signature||64 bytes||secp256k1 ECDSA signature encoded as R, S, both in big endian||Signature over SHA256(10 followed by all remaining data in this message)
+|signature||secp256k1 compact signature||64 bytes||secp256k1 ECDSA signature encoded as R, S, both in big endian||Signature over SHA256(11 followed by all remaining data in this message)
 |-
 |new_host_port||String||1 length byte + up to 255 byte string||String encoded as length-byte followed by host:port||New host to connect to for this pool
 |}
@@ -762,7 +762,7 @@ TODO: Something about how having only one pool server is great cause you can mul
 |-
 |flags||uint16_t||1 byte1||8 flag bits||Flags indicating optional message features which the server selected for use.
 |-
-|signature||secp256k1 compact signature||0 or 64 bytes||secp256k1 ECDSA signature encoded as R, S, both in big endian||Signature over SHA256(11 followed by all remaining data in this message), only present if bit 0 of flags is 1.
+|signature||secp256k1 compact signature||0 or 64 bytes||secp256k1 ECDSA signature encoded as R, S, both in big endian||Signature over SHA256(12 followed by all remaining data in this message), only present if bit 0 of flags is 1.
 |-
 |vendor||String||1 length byte + up to 255 byte string||String encoded as length-byte followed by the vendor||Vendor descriptor for the message
 |-
